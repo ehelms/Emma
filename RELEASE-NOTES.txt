@@ -1,0 +1,172 @@
+EMMA is a fast Java code coverage tool based on low overhead bytecode
+instrumentation. It is designed to support large scale enterprise software
+projects as well as agile personal software processes.
+
+The most significant change in this v2.1 stable build update is the addition of a
+new tool, ctl. This tool allows remote control over EMMA runtime. Several
+control commands are currently implemented:
+ - download coverage data to a local file,
+ - remotely dump coverage data,
+ - reset coverage data in a remote JVM. 
+
+J2EE/application server users should find the new capability very useful,
+since it is now possible to collect coverage data without a JVM exit, across
+the network, and without having to deal with classloading problems in exit
+hook threads that plagued v2.0.
+
+Following the usual EMMA design, this functionality is exposed in equal
+measure via a new command line tool and a new ANT task. Because this is an
+early access build, the official documentation has not been updated yet
+(this will happen when v2.1 releases). Until then, see the update below for
+the new tool usage details.
+
+************************************************
+CUMULATIVE LIST OF IMPLEMENTED FEATURE REQUESTS:
+************************************************
+
+2.1.5320
+~~~~~~~~
+
+977714	support runtime coverage data collection without a JVM exit
+http://sf.net/tracker/index.php?func=detail&aid=977714&group_id=108932&atid=651900
+
+1167510	reset coverage data
+http://sf.net/tracker/?group_id=108932&atid=651900&func=detail&aid=1167510
+
+    A new processor, CtlProcessor (used by a new 'emma ctl' command line
+    tool and a new <ctl> ANT task) can communicate with a JVM running
+    EMMA-instrumented classes via a TCP socket. On each invocation, the
+    processor dispatches a series of control commands such as
+    'coverage.get', 'coverage.dump', and 'coverage.reset', for example:
+
+      <emma>
+        <ctl connect="localhost:47653" >
+          <command name="coverage.get" args="mycoverage.ec" />
+          <command>coverage.reset</command> <!-- alternate command syntax -->
+        </ctl>
+      </emma>
+    or
+      java -cp ... emma ctl -connect localhost:47653 \
+                            -command coverage.get,mycoverage.ec \
+                            -command coverage.reset
+
+    This will download current coverage data from a JVM at a given TCP address
+    and save it into a local file 'mycoverage.ec', followed by a coverage reset. 
+
+    The connection string above is in the form "host:port", where the host
+    defaults to 'localhost' and the port to 47653. Currently, there are
+    three commands with the following arguments:
+
+      coverage.get[,<output pathname>][,<merge>][,<disable exit hook>]
+      coverage.dump[,<output pathname>][,<merge>][,<disable exit hook>]
+      coverage.reset
+
+    The first one asks the server JVM to send its current coverage data to
+    the client ctl tool over the socket connection, the second one asks the
+    server JVM to dump coverage data on the *server* machine. Consequently,
+    the optional argument <pathname> (defaults to 'coverage.ec') is
+    interpreted either on the client or on the server machine, depending on
+    the command used (the two machines can even run different OSes). The
+    <merge> boolean flag has the usual semantics. Finally, the last argument
+    indicates whether to disable the usual dump-coverage-on-JVM-exit
+    behavior. Set it to 'false' if you want v2.0 behavior.
+
+    The last command will zero out all coverage numbers, except for class
+    coverage (class coverage corresponds to class loading, so it can't be
+    reset). Subsequent code execution will induce new coverage, of
+    course. Neither command suspends the JVM.
+
+    A command sequence can contain any number of commands. Note that in ANT,
+    <command name="coverage.get" args="mycoverage.ec" /> is the same as
+    <command>coverage.get,mycoverage.ec</command>. Use commas to delimit
+    arguments. If you want to skip an argument, use comma delimiters to
+    indicate that you are happy with its default, e.g,
+    <command>coverage.get,,,false</command>.
+
+    NOTE: 'coverage.reset' currently resets all static initializers. This is
+    not correct (since those can never execute again) and will be fixed in
+    the future.
+
+    This new functionality is controlled by a new set of EMMA properties:
+
+    rt.control:         true
+    rt.control.host:    localhost
+    rt.control.port:    47653
+
+2.1.5214
+~~~~~~~~
+
+974340	make concurrent output file writing safer
+http://sf.net/tracker/?group_id=108932&atid=651900&func=detail&aid=974340
+
+    v2.1 will default to using a machine-global mutex when writing to the
+    coverage output file. This mutex implementation is based on a UDP socket
+    and will work in any J2SE version. Locking behavior is controlled by a
+    new set of EMMA properties:
+
+    rt.filelock:           true
+    rt.filelock.portbase:  59141
+    rt.filelock.maxtime:   120000
+    rt.filelock.retries:   11
+
+    File locking is enabled by default but can be disabled using
+    'rt.filelock' boolean property. The UDP port acquired is a sum of
+    'rt.filelockbase' and an offset (0-254) that is derived from the file's
+    canonical pathname. This ensures that concurrent JVMs writing to
+    *different* files are unlikely to serialize each other on the same
+    socket mutex.
+
+    'rt.filelock.maxtime' and 'rt.filelock.retries' specify for how long to
+    try getting the lock and in how many retry attempts, before erroring
+    out. The retry scheme is exponential backout.
+
+2.1.5124
+~~~~~~~~
+
+999764	'v'/'version' command line option
+http://sf.net/tracker/?group_id=108932&atid=651900&func=detail&aid=999764
+
+    The traditional -v|-version option is now accepted by all command line
+    tools, to help with issue submission.
+
+977738	an option to auto-exclude empty classes
+http://sf.net/tracker/?group_id=108932&atid=651900&func=detail&aid=977738
+
+    v2.1 will default to automatically excluding all classes with no methods
+    (javac has a flaw whereby it will emit such classes for certain code
+    patterns). This behavior is controlled by a new boolean property
+    'instr.exclude_empty_classes' that defaults to 'true'. Because such
+    empty classes affect class coverage, users who wish to retain their
+    existing coverage numbers can turn this exclusion off. Note that all
+    other types of coverage are unaffected.
+
+
+************************************************
+CUMULATIVE LIST OF FIXED DEFECTS:
+************************************************
+
+2.1.5320
+~~~~~~~~
+
+1222865	<filter file=.../> fails inside dirs with whitespace
+http://sf.net/tracker/index.php?func=detail&aid=1222865&group_id=108932&atid=651897
+
+2.1.5214
+~~~~~~~~
+
+1189166	AIOOBE when handling report properties
+http://sf.net/tracker/?group_id=108932&atid=651897&func=detail&aid=1189166
+
+1015721	whitespace at end of property values
+http://sf.net/tracker/?group_id=108932&atid=651897&func=detail&aid=1015721
+
+1077741	report tool problem with "/"-prefixed report locations
+http://sf.net/tracker/?group_id=108932&atid=651897&func=detail&aid=1077741
+
+1002854	sourcepath and java file locations
+http://sf.net/tracker/?group_id=108932&atid=651897&func=detail&aid=1002854
+
+2.1.5124
+~~~~~~~~
+
+(none)

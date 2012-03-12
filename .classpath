@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="core/java12"/>
+	<classpathentry kind="src" path="core/java13"/>
+	<classpathentry kind="src" path="core/java14"/>
+	<classpathentry kind="src" path="ant/ant14"/>
+	<classpathentry kind="src" path="ant/ant15"/>
+	<classpathentry kind="src" path="core/data"/>
+	<classpathentry output="bin/tools" kind="src" path="tools/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="var" path="ANT_15"/>
+	<classpathentry kind="output" path="bin/core"/>
+</classpath>
