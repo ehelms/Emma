@@ -33,10 +33,11 @@
   <!-- global compiler settings: -->
 
   <property name="build.debug" value="on" /> <!-- default for a release build is "on" -->
-  <property name="build.deprecation" value="off" />
+  <property name="build.deprecation" value="on" />
   <property name="build.compiler" value="modern" />
   <property name="build.sysclasspath" value="ignore" />
-  <property name="build.target" value="1.2" /> <!-- all .class files are stamped as compatible with 1.2 JVMs: -->
+  <property name="build.target" value="1.4" /> <!-- all .class files are stamped as compatible with 1.2 JVMs: -->
+  <property name="build.source" value="1.4" />
 
   <!-- ============================================================== -->
   <!-- main/default build target: -->
