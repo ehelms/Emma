@@ -343,7 +343,7 @@ final class InstrClassLoader extends URLClassLoader
         // support ProtectionDomains with non-null class source URLs:
         // [however, disable anything related to sealing or signing]
         
-        final CodeSource csrc = new CodeSource (srcURL, null);
+        final CodeSource csrc = new CodeSource (srcURL, (java.security.CodeSigner[])null);
         
         // allow getPackage() to return non-null on the class we are about to
         // define (however, don't bother emulating the original manifest info since
